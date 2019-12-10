@@ -1,5 +1,6 @@
-#include <mpi.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <mpi.h>
 
 int main(int argc, char** argv) {
     // Initialize the MPI environment
@@ -18,9 +19,20 @@ int main(int argc, char** argv) {
     int name_len;
     MPI_Get_processor_name(processor_name, &name_len);
 
+    int uniform_int = 0;
+    if (world_rank == 0) {
+        uniform_int = 45;
+    } else {
+        uniform_int = -3;
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Bcast(&uniform_int, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
+
     // Print off a hello world message
-    printf("Hello world from processor %s, rank %d out of %d processors\n",
-           processor_name, world_rank, world_size);
+    printf("Processor %s, rank %d out of %d, uniform int %d \n",
+           processor_name, world_rank, world_size, uniform_int);
 
     // Finalize the MPI environment.
     MPI_Finalize();
