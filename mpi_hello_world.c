@@ -1,3 +1,6 @@
+/*
+A very simple MPI program.
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
@@ -19,18 +22,22 @@ int main(int argc, char** argv) {
     int name_len;
     MPI_Get_processor_name(processor_name, &name_len);
 
+    // Set up an integer to be broadcast later.
+    // Note the different value for master and workers.
     int uniform_int = 0;
-    if (world_rank == 0) {
-        uniform_int = 45;
-    } else {
+    if (world_rank == 0) { // if master
+        uniform_int = 45; // TODO: change this to random value
+    } else { // if worker
         uniform_int = -3;
     }
 
+    // Broadcast the value (from master to workers)
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Bcast(&uniform_int, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
 
-    // Print off a hello world message
+    // Print out
+    // If the data transfer work
     printf("Processor %s, rank %d out of %d, uniform int %d \n",
            processor_name, world_rank, world_size, uniform_int);
 
