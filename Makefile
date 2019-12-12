@@ -1,10 +1,15 @@
-EXE=mpi_hello_world
+# Switch between OpenMPI and MPICH
+IDIR=/usr/include/openmpi
+#IDIR=/usr/include/mpich
+
 MPICC=mpicc
+TARGET=mpi_check
 
-all: ${EXE}
+%.o: %.c
+	${MPICC} -c -o $@ $< -I${IDIR}
 
-mpi_hello_world: mpi_hello_world.c
-	${MPICC} -o mpi_hello_world mpi_hello_world.c
+${TARGET}: ${TARGET}.o 
+	${MPICC} -o $@ $^ -I${IDIR}
 
 clean:
-	rm ${EXE}
+	rm -f mpi_check *.o core

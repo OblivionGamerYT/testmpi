@@ -5,8 +5,9 @@ A very simple MPI program.
 #include <stdlib.h>
 #include <mpi.h>
 
+enum data {DATA_NONE=0, DATA_MASTER=1, DATA_WORKER=-1};
+
 int main(int argc, char** argv) {
-    // Initialize the MPI environment
     MPI_Init(NULL, NULL);
 
     // Get the number of processes
@@ -22,25 +23,32 @@ int main(int argc, char** argv) {
     int name_len;
     MPI_Get_processor_name(processor_name, &name_len);
 
-    // Set up an integer to be broadcast later.
-    // Note the different value for master and workers.
-    int uniform_int = 0;
-    if (world_rank == 0) { // if master
-        uniform_int = 45; // TODO: change this to random value
-    } else { // if worker
-        uniform_int = -3;
+    // Set up the data to be broadcast later.
+    int data = DATA_NONE;
+    if (world_rank == 0) { // master
+        data = DATA_MASTER; // value to be broadcast
+    } else { // worker
+        data = DATA_WORKER;  // value to be overwritten
     }
 
     // Broadcast the value (from master to workers)
     MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Bcast(&uniform_int, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&data, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
 
     // Print out
-    // If the data transfer work
-    printf("Processor %s, rank %d out of %d, uniform int %d \n",
-           processor_name, world_rank, world_size, uniform_int);
+    if (world_rank == 0) { // master
+        printf("Processor %s, rank %d of %d (MASTER): %d \n",
+            processor_name, world_rank, world_size, data);
+    } else { // worker
+        if (data == DATA_MASTER) {
+            printf("Processor %s, rank %d of %d (worker): %d SUCCESS\n",
+                processor_name, world_rank, world_size, data);
+        } else { // data is not master data
+            printf("Processor %s, rank %d of %d (worker): %d FAIL\n",
+                processor_name, world_rank, world_size, data);
+        }
+    }
 
-    // Finalize the MPI environment.
     MPI_Finalize();
 }
