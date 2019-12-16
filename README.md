@@ -1,6 +1,6 @@
-# Testing MPI implementations inside Docker container
+# Testing MPI implementations inside Singularity container
 
-This package tests various implementations of MPI inside Docker container.
+This package tests various implementations of MPI inside Singularity containers derived directly from Docker images.
 Two major implementations are tested here: MPICH and OpenMPI.
 Package contents:
 * Source code (`mpi_check.c`) and `Makefile`
@@ -22,22 +22,36 @@ More information on this can be found here: [https://www.open-mpi.org/software/o
 ## How to use
 ### Using a pre-built Docker image
 This is the simplest way.
-1. Pull a suitable pre-built image from DockerHub using Singularity:
+1. Pull one of these pre-built Docker images from DockerHub and turn it into Singularity container:
 ```
 singularity pull docker://lahur/testmpich
 singularity pull docker://lahur/openmpi-3.1.4
+singularity pull docker://lahur/openmpi-4.0.2
 ```
 2. Run the command within the container
+For example, on Pearcey, depending on the MPI implmentation, run one of these batch files.
+```
+batch pearcey-mpich.sbatch
+batch pearcey-openmpi-3.1.4.sbatch
+batch pearcey-openmpi-4.0.2.sbatch
+```
 
 ### Building Docker image
-There are cases where you need to modify something, such as for checking OpenMPI version not available in pre-built images. To build your own Docker image, you might need to modify Dockerfile.
+There are cases where you need to modify something, such as for checking OpenMPI version not available in pre-built images. To build your own Docker image, you might need to modify Dockerfile. Then run the build command.
 ```
 docker build -t my_docker_image -f my_dockerfile .
 ```
-If you wish to use the image on another machine, push the Docker image to your account in DockerHub. Then pull it from the target machine.
+If you wish to use the image on another machine, push the Docker image to your account in DockerHub. 
+```
+docker push my_account/my_docker_image:image_tag
+```
+Then pull it from the target machine as a singularity object.
+```
+singularity pull docker://my_account/my_docker_image:image_tag
+```
 
-## TO DO
-* More detailed steps
+### Building Singularity image
+This will be added later, if required.
 
-## Miscellaneous
-* This package can be extended to testing IO load from within container.
+## Extension
+This package can be extended to testing other aspects of container on HPC, such as IO load from within container.
