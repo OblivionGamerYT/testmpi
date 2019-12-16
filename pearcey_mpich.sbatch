@@ -1,8 +1,8 @@
 #!/bin/bash -l
-#SBATCH --ntasks=40
+#SBATCH --ntasks=20
 #SBATCH --time=00:10:00
 
 module load singularity
-module load mpich/3.3.0
+module load openmpi/3.1.4-ofed45-gcc
 
-mpirun -n 40 singularity exec testmpi_latest.sif /home/testmpi/mpi_check
+mpirun -n 20 -oversubscribe singularity exec testopenmpi-3.1.4_latest.sif /home/testmpi/mpi_check
