@@ -1,0 +1,24 @@
+# Recipe to make image for OpenMPI-4.0.2
+FROM ubuntu:latest
+RUN apt-get update
+RUN apt-get upgrade -y
+RUN apt-get autoremove -y
+RUN apt-get install -y git
+RUN apt-get install -y wget
+RUN apt-get install -y g++
+RUN apt-get install -y make
+# Install OpenMPI-4.0.2 from source
+WORKDIR /home
+RUN wget https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.2.tar.gz
+RUN gunzip openmpi-4.0.2.tar.gz
+RUN tar -xvf openmpi-4.0.2.tar
+WORKDIR /home/openmpi-4.0.2
+RUN ./configure --prefix="/home/$USER/.openmpi"
+RUN make all install
+ENV PATH=$PATH:/home/$USER/.openmpi/bin
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/$USER/.openmpi/lib/:/usr/local/lib
+# 
+WORKDIR /home
+RUN git clone https://github.com/prlahur/testmpi.git
+WORKDIR /home/testmpi
+RUN make

@@ -20,7 +20,7 @@ There are a number of versions:
 More information on this can be found here: [https://www.open-mpi.org/software/ompi/versions/]
 
 ## How to use
-### Use a pre-built Docker image
+### Using a pre-built Docker image
 This is the simplest way.
 1. Pull a suitable pre-built image from DockerHub using Singularity:
 ```
@@ -29,8 +29,8 @@ singularity pull docker://lahur/openmpi-3.1.4
 ```
 2. Run the command within the container
 
-### Build Docker image
-There are cases where you need to modify something, such as checking OpenMPI version not available in pre-built images. To build your own Docker image, you might need to modify Dockerfile.
+### Building Docker image
+There are cases where you need to modify something, such as for checking OpenMPI version not available in pre-built images. To build your own Docker image, you might need to modify Dockerfile.
 ```
 docker build -t my_docker_image -f my_dockerfile .
 ```
