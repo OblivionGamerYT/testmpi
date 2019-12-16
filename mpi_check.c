@@ -1,5 +1,6 @@
 /*
-A very simple MPI program.
+Check whether a master can broadcast data to multiple workers.
+If there is only one process, then the master has no worker.
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,17 +38,22 @@ int main(int argc, char** argv) {
     MPI_Barrier(MPI_COMM_WORLD);
 
     // Print out
-    if (world_rank == 0) { // master
-        printf("Processor %s, rank %d of %d (MASTER): %d \n",
-            processor_name, world_rank, world_size, data);
-    } else { // worker
-        if (data == DATA_MASTER) {
-            printf("Processor %s, rank %d of %d (worker): %d SUCCESS\n",
+    if (world_size > 1) {
+        if (world_rank == 0) { // master
+            printf("Processor %s, rank %d of %d (MASTER): %d \n",
                 processor_name, world_rank, world_size, data);
-        } else { // data is not master data
-            printf("Processor %s, rank %d of %d (worker): %d FAIL\n",
-                processor_name, world_rank, world_size, data);
+        } else { // worker
+            if (data == DATA_MASTER) {
+                printf("Processor %s, rank %d of %d (worker): %d SUCCESS\n",
+                    processor_name, world_rank, world_size, data);
+            } else { // data is not master data
+                printf("Processor %s, rank %d of %d (worker): %d FAIL\n",
+                    processor_name, world_rank, world_size, data);
+            }
         }
+    } else {
+        printf("Processor %s, rank %d of %d (MASTER without worker): %d \n",
+            processor_name, world_rank, world_size, data);
     }
 
     MPI_Finalize();
