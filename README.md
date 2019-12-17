@@ -39,15 +39,15 @@ batch pearcey-openmpi-4.0.2.sbatch
 ### Building Docker image
 There are cases where you need to modify something, such as for checking OpenMPI version not available in pre-built images. To build your own Docker image, you might need to modify Dockerfile. Then run the build command.
 ```
-docker build -t my_docker_image -f my_dockerfile .
+docker build -t my_dockerHub_account/my_docker_image:image_tag -f my_dockerfile .
 ```
 If you wish to use the image on another machine, push the Docker image to your account in DockerHub. 
 ```
-docker push my_account/my_docker_image:image_tag
+docker push my_dockerHub_account/my_docker_image:image_tag
 ```
 Then pull it from the target machine as a singularity object.
 ```
-singularity pull docker://my_account/my_docker_image:image_tag
+singularity pull docker://my_dockerHub_account/my_docker_image:image_tag
 ```
 
 ### Building Singularity image
