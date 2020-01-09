@@ -1,4 +1,5 @@
 #!/bin/bash -l
+## This file is automatically created by master.py
 #SBATCH --ntasks=20
 #SBATCH --time=00:10:00
 

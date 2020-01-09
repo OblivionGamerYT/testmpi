@@ -3,9 +3,9 @@
 This package tests various implementations of MPI inside Singularity containers derived directly from Docker images.
 Two major implementations are tested here: MPICH and OpenMPI.
 Package contents:
-* Source code (`mpi_check.c`) and `Makefile`
-* Dockerfiles for building Docker images of various MPI implementations (`Dockerfile-*`)
-* Samples of job scheduling batch files for a number of HPC systems (`*.sbatch`)
+* Source code `mpi_check.c` and `Makefile`
+* Python script `master.py` to automatically create Docker images of various MPI implementations, 
+  as well as samples of job scheduling batch files for an HPC system (`*.sbatch`).
 
 ## MPICH
 It has ABI (Application Binary Interface) compatibility across multiple versions and vendors.
@@ -14,9 +14,9 @@ More information can be found here: [https://www.mpich.org/abi/]
 ## OpenMPI
 Compatibility is guaranteed within a major version number, where a version number is given as: `major.minor.release`.
 There are a number of versions:
-* Current at the time of writing (December 2019): 4.x
-* Still supported by OpenMPI: 3.x
-* No longer supported: 2.x and 1.x
+* Current at the time of writing (December 2019): `4.x`
+* Still supported by OpenMPI: `3.x`
+* No longer supported: `2.x` and `1.x`
 More information on this can be found here: [https://www.open-mpi.org/software/ompi/versions/]
 
 ## How to use
@@ -25,18 +25,45 @@ This is the simplest way.
 1. Pull one of these pre-built Docker images from DockerHub and turn it into Singularity container:
 ```
 singularity pull docker://lahur/testmpich
-singularity pull docker://lahur/openmpi-3.1.4
-singularity pull docker://lahur/openmpi-4.0.2
+singularity pull docker://lahur/testopenmpi-4.0.2
+singularity pull docker://lahur/testopenmpi-3.1.4
+singularity pull docker://lahur/testopenmpi-2.1.6
 ```
 2. Run the command within the container
 For example, on Pearcey, depending on the MPI implmentation, run one of these batch files.
 ```
-batch pearcey-mpich.sbatch
-batch pearcey-openmpi-3.1.4.sbatch
-batch pearcey-openmpi-4.0.2.sbatch
+sbatch pearcey-mpich.sbatch
+sbatch pearcey-openmpi-4.0.2.sbatch
+sbatch pearcey-openmpi-3.1.4.sbatch
+sbatch pearcey-openmpi-2.1.6.sbatch
 ```
 
-### Building Docker image
+### Building Docker images automatically
+The Python script `master.py` can build a number of Docker images automatically.
+Inside the file, at the top, there's a section for user settings:
+```
+mpi_targets = ["mpich", "openmpi-4.0.2", "openmpi-3.1.4", "openmpi-2.1.6"]
+
+target_prepend = "lahur/test"
+target_append = ":latest"
+
+dry_run = True
+
+HPC = "pearcey"
+```
+`mpi_targets` is a list of MPI targets. Modify this to build different target.
+The name of Docker image created will be in this format:
+`target_prepend` `target` `target_append` 
+For example: `lahur/testopenmpi-4.0.2:latest`.
+Set `dry_run` to `False` is you want to build the image.
+`HPC` is the name of HPC that will be prepended to sample batch files.
+Executing the script is simple.
+```
+python master.py
+```
+The script will create the necessary Dockerfiles, build the images, and make samples of SLURM batch files.
+
+### Building Docker image manually
 There are cases where you need to modify something, such as for checking OpenMPI version not available in pre-built images. To build your own Docker image, you might need to modify Dockerfile. Then run the build command.
 ```
 docker build -t my_dockerHub_account/my_docker_image:image_tag -f my_dockerfile .

@@ -4,6 +4,6 @@
 #SBATCH --time=00:10:00
 
 module load singularity/3.5.0
-module load openmpi/4.0.2-ofed45-gcc
+module load openmpi/2.1.6-ofed45-gcc
 
-mpirun -n 20 -oversubscribe singularity exec testopenmpi-4.0.2_latest.sif /home/testmpi/mpi_check
+mpirun -n 20 -oversubscribe singularity exec testopenmpi-2.1.6_latest.sif /home/testmpi/mpi_check
