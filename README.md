@@ -51,12 +51,15 @@ dry_run = True
 
 HPC = "pearcey"
 ```
-`mpi_targets` is a list of MPI targets. Modify this to build different target.
-The name of Docker image created will be in this format:
-`target_prepend` `target` `target_append` 
+
+Note
+- `mpi_targets` is a list of MPI targets. Modify this to build different target.
+- The name of Docker image created will be in this format:
+`target_prepend` `target` `target_append`. 
 For example: `lahur/testopenmpi-4.0.2:latest`.
-Set `dry_run` to `False` is you want to build the image.
-`HPC` is the name of HPC that will be prepended to sample batch files.
+- Set `dry_run` to `False` if you want to actually build the image. Otherwise only Dockerfiles and sample batch files are produced.
+- `HPC` is the name of HPC that will be prepended to sample batch files.
+
 Executing the script is simple.
 ```
 python master.py
