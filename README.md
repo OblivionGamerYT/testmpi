@@ -1,4 +1,4 @@
-# Testing MPI implementations inside Singularity container
+# Testing MPI implementations inside Docker / Singularity container
 
 This package tests various implementations of MPI inside Singularity containers derived directly from Docker images.
 Two major implementations are tested here: MPICH and OpenMPI.
@@ -64,10 +64,12 @@ python master.py
 The script will create the necessary Dockerfiles, build the images, and make samples of SLURM batch files.
 
 ### Building Docker image manually
-There are cases where you need to modify something, such as for checking OpenMPI version not available in pre-built images. To build your own Docker image, you might need to modify Dockerfile. Then run the build command.
+To build Docker image manually, you can modify the existing Dockerfiles. Then run the build command.
 ```
 docker build -t my_dockerHub_account/my_docker_image:image_tag -f my_dockerfile .
 ```
+
+### Sharing Docker image
 If you wish to use the image on another machine, push the Docker image to your account in DockerHub. 
 ```
 docker push my_dockerHub_account/my_docker_image:image_tag
