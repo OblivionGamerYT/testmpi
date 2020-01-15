@@ -82,7 +82,7 @@ singularity pull docker://my_dockerHub_account/my_docker_image:image_tag
 ```
 
 ## Other pages
-- [License](../LICENSE.md)
+- [License](LICENSE.md)
 
 ## Links
 - Website for this project: <https://prlahur.github.io/testmpi/>
