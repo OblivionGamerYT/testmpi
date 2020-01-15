@@ -81,7 +81,7 @@ Then pull it from the target machine as a singularity object.
 singularity pull docker://my_dockerHub_account/my_docker_image:image_tag
 ```
 
-## Other pages
+## Navigation
 - [License](LICENSE.md)
 
 ## Links
