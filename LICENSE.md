@@ -1,5 +1,5 @@
 # License
 Info of license will be added later.
 
-# Navigation
+## Navigation
 - [HOME](README.md)
