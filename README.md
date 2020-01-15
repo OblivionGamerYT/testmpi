@@ -9,7 +9,7 @@ Package contents:
 
 ## MPICH
 It has ABI (Application Binary Interface) compatibility across multiple versions and vendors.
-More information can be found here: [https://www.mpich.org/abi/]
+More information can be found here: https://www.mpich.org/abi/
 
 ## OpenMPI
 Compatibility is guaranteed within a major version number, where a version number is given as: `major.minor.release`.
@@ -17,7 +17,7 @@ There are a number of versions:
 * Current at the time of writing (December 2019): `4.x`
 * Still supported by OpenMPI: `3.x`
 * No longer supported: `2.x` and `1.x`
-More information on this can be found here: [https://www.open-mpi.org/software/ompi/versions/]
+More information on this can be found here: https://www.open-mpi.org/software/ompi/versions/
 
 ## How to use
 ### Using a pre-built Docker image
@@ -82,8 +82,5 @@ Then pull it from the target machine as a singularity object.
 singularity pull docker://my_dockerHub_account/my_docker_image:image_tag
 ```
 
-### Building Singularity image
-This will be added later, if required.
-
-## Extension
-This package can be extended to testing other aspects of container on HPC, such as IO load from within container.
+## Links
+Website for this project: https://prlahur.github.io/testmpi/
