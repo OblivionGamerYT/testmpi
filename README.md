@@ -82,7 +82,8 @@ singularity pull docker://my_dockerHub_account/my_docker_image:image_tag
 ```
 
 ## Navigation
-- [License](LICENSE.html)
+- [About us](ABOUT_US.md)
+- [License](LICENSE.md)
 - [Miscellaneous](MISC.md)
 
 ## Links
