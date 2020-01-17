@@ -9,7 +9,7 @@ defaults:
         nav: "docs"
 ---
 
-theme: jekyll-theme-minimal
+theme: minima
 
 title: MPI with Docker and Singularity
 
