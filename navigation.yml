@@ -2,10 +2,10 @@
   url: /
 
 - title: About us
-  url: ABOUT_US.md
+  url: /ABOUT_US.md
 
 - title: License
-  url: LICENSE.md
+  url: /LICENSE.md
 
 - title: Miscellaneous
-  url: MISC.md
+  url: /MISC.md
