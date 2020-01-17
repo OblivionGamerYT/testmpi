@@ -1,4 +1,15 @@
-#theme: jekyll-theme-minimal
+---
+defaults:
+  # _docs
+  - scope:
+      path: ""
+      type: docs
+    values:
+      sidebar:
+        nav: "docs"
+---
+
+theme: jekyll-theme-minimal
 
 title: MPI with Docker and Singularity
 
@@ -26,9 +37,6 @@ include:
   - MISC.md
   - ABOUT_US.md
   - navigation.html
-
-sidebar:
-  nav: "docs"
 
 plugins:
   - jekyll-relative-links
