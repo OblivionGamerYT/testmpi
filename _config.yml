@@ -5,6 +5,7 @@ relative_links:
   enabled: true
   collections: true
 include:
+  - navigation.html
   - README.md
   - LICENSE.md
   - COPYING.md
@@ -14,5 +15,3 @@ include:
   - PULL_REQUEST_TEMPLATE.md
   - MISC.md
   - ABOUT_US.md
-  
-{% include_relative navigation.html %}
