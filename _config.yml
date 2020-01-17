@@ -14,3 +14,4 @@ include:
   - PULL_REQUEST_TEMPLATE.md
   - MISC.md
   - ABOUT_US.md
+{% include navigation.html}
