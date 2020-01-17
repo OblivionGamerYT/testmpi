@@ -3,8 +3,9 @@
 title: MPI with Docker and Singularity
 
 navbar-links:
-  Home: "/README.md"
-  License: "/LICENSE.md"
+  - Home: "/README.md"
+  - License: "/LICENSE.md"
+  - MPICH: "https://www.mpich.org/"
 
 relative_links:
   enabled: true
