@@ -15,3 +15,6 @@ include:
   - PULL_REQUEST_TEMPLATE.md
   - MISC.md
   - ABOUT_US.md
+
+  sidebar:
+    nav: "docs"
