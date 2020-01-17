@@ -3,11 +3,9 @@
 title: MPI with Docker and Singularity
 
 navbar-links:
-  Home: "README.md"
-  License: "LICENSE.md"
+  Home: "/README.md"
+  License: "/LICENSE.md"
 
-plugins:
-  - jekyll-relative-links
 relative_links:
   enabled: true
   collections: true
@@ -24,3 +22,8 @@ include:
 
 #sidebar:
 #  nav: "docs"
+
+plugins:
+  - jekyll-relative-links
+  - jekyll-paginate
+  - jekyll-sitemap
