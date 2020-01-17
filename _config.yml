@@ -1,4 +1,11 @@
 theme: jekyll-theme-minimal
+
+title: MPI with Docker and Singularity
+
+navbar-links:
+  Home: "README.md"
+  License: "LICENSE.md"
+
 plugins:
   - jekyll-relative-links
 relative_links:
@@ -15,5 +22,5 @@ include:
   - MISC.md
   - ABOUT_US.md
 
-sidebar:
-  nav: "docs"
+#sidebar:
+#  nav: "docs"
