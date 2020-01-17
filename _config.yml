@@ -2,10 +2,14 @@ theme: jekyll-theme-minimal
 
 title: MPI with Docker and Singularity
 
-#navbar-links:
-#  - Home: "/README.md"
-#  - License: "/LICENSE.md"
-#  - MPICH: "https://www.mpich.org/"
+navbar-links:
+  - Home: "/README.md"
+  - License: "/LICENSE.md"
+  - MPICH: "https://www.mpich.org/"
+
+navbar-col: "#F5F5F5"
+navbar-text-col: "#404040"
+navbar-children-col: "#F5F5F5"
 
 relative_links:
   enabled: true
