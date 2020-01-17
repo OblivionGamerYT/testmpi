@@ -15,5 +15,5 @@ include:
   - MISC.md
   - ABOUT_US.md
 
-  sidebar:
-    nav: "docs"
+sidebar:
+  nav: "docs"
