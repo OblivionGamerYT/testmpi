@@ -1,11 +1,11 @@
 - title: Home
   url: /
+  sublinks:
+  - title: About us
+    url: /ABOUT_US.md
 
-- title: About us
-  url: /ABOUT_US.md
+  - title: License
+    url: /LICENSE.md
 
-- title: License
-  url: /LICENSE.md
-
-- title: Miscellaneous
-  url: /MISC.md
+  - title: Miscellaneous
+    url: /MISC.md
