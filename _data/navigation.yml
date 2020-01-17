@@ -1,6 +1,6 @@
 docs:
-  - title: Home
-    url: /
+  - title: "Home"
+    url: /README.md
 
   - title: "About us"
     url: /ABOUT_US.md
