@@ -5,7 +5,6 @@ relative_links:
   enabled: true
   collections: true
 include:
-  - navigation.html
   - README.md
   - LICENSE.md
   - COPYING.md
