@@ -9,5 +9,3 @@ One of the software that we are working on is called ASKAPsoft. In an effort to 
 
 ![ASKAP antennas in Western Australia](ASKAP-night-6932-ACherney.jpg)
 
-## Navigation
-- [HOME](README.md)
