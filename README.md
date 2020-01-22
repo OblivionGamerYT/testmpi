@@ -83,11 +83,6 @@ Then pull it from the target machine as a singularity object.
 singularity pull docker://my_dockerHub_account/my_docker_image:image_tag
 ```
 
-## Navigation
-- [About us](ABOUT_US.md)
-- [License](LICENSE.md)
-- [Miscellaneous](MISC.md)
-
 ## Links
 - Website for this project: <https://prlahur.github.io/testmpi/>
 - CSIRO <https://www.csiro.au/>
