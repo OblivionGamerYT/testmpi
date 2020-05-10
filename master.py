@@ -11,16 +11,15 @@
 # For specific machine, MPI target is already specified.
 # Example:
 # machine_targets = ["generic", "galaxy"]
-machine_targets = ["galaxy"]
+machine_targets = ["generic"]
 
-# Set target MPI implementations for "generic" machine.
-# A valid mpi target is either "mpich" or OpenMPI
-# The latter must be in this format: "openmpi-X.Y.Z", 
-# where X, Y and Z are version's major, minor and revision number, respectively.
-# Example:
-#mpi_targets = ["mpich", "openmpi-4.0.2", "openmpi-3.1.4", "openmpi-2.1.6"]
-#mpi_targets = ["mpich-3.3.2"]
-mpi_targets = []
+# Set MPI implementations for "generic" machine in the list below.
+# Note that a specific machine already has its MPI specified.
+# A valid mpi target is either "mpich" or "openmpi-X.Y.Z", 
+# where X, Y and Z are version numbers (major, minor and revision).
+# Possible MPI targets:
+# mpi_targets = ["mpich", "mpich-3.3.2", "openmpi", "openmpi-4.0.3", "openmpi-3.1.4", "openmpi-2.1.6", "openmpi-1.10.7"]
+mpi_targets = ["mpich", "openmpi-4.0.3"]
 
 # Docker image name is in this format: 
 # target_prepend + mpi_target + target_append
@@ -35,247 +34,400 @@ dry_run = True
 # sample_batch = "pearcey"
 sample_batch = ""
 
+# The number of processors to use for the build
+nproc = 1
+
 #------------------------------------------------------------------------------
 # CODE
 
+import sys
+import argparse
+import subprocess
+import re
+from pathlib import Path
+
+# Header for all automatically generated Dockerfiles
+header = ("# This file is automatically created by " + __file__ + "\n")
+
+mpi_dir = "/usr/local"
+MPI_COMPILE_FLAGS = "-I/usr/local/include -pthread"
+
+forbidden_chars_string = "?!@#$%^&* ;<>?|\"\a\b\f\n\r\t\v"
+forbidden_chars = list(forbidden_chars_string)
+
+# Sanitizing parameters
+machine_targets = list(map(str.lower, machine_targets))
+mpi_targets = list(map(str.lower, mpi_targets))
+
+
+def is_proper_name(name):
+    '''
+    Return true if the name is non-empty and does not contain certain characters. 
+    False otherwise.
+    '''
+    if type(name) != str:
+        raise TypeError("Name is not string")
+    if name == "":
+        return False
+    for c in forbidden_chars:
+        if name.find(c) >= 0:
+            return False
+    return True
+
+
 class DockerClass:
-    def set_file_name(self, file_name):
-        self.file_name = file_name
+    recipe_name = ""
+    image_name = ""
+    recipe = ""
 
-    def set_content(self, content):
-        self.content = content
+    def set_recipe_name(self, recipe_name):
+        '''Set Dockerfile name'''
+        if is_proper_name(recipe_name):
+            self.recipe_name = recipe_name
+        else:
+            raise ValueError("Illegal recipe_name:", recipe_name)
 
-    def set_image(self, image):
-        self.image = image
+    def set_recipe(self, recipe):
+        '''Set the content of Dockerfile'''
+        if type(recipe) == str:
+            if recipe != "":
+                self.recipe = recipe
+            else:
+                raise ValueError("Recipe is empty string")
+        else:
+            raise TypeError("Recipe is not string")
 
-    def write(self):
-        '''Write dockerfile'''
-        f = open(self.file_name, "w")
-        f.write(self.content)
-        f.close()
+    def set_image_name(self, image_name):
+        '''Set Docker image name'''
+        if is_proper_name(image_name):
+            self.image_name = image_name
+        else:
+            raise ValueError("Illegal image_name:", image_name)
+
+    def write_recipe(self):
+        '''Write recipe into Dockerfile'''
+        if self.recipe_name == "":
+            raise ValueError("Docker recipe file name has not been set")
+        elif self.recipe == "":
+            raise ValueError("Docker recipe content has not been set")
+        else:
+            with open(self.recipe_name, "w") as file:
+                file.write(self.recipe)
+
+    def get_build_command(self):
+        '''Return build command'''
+        if (self.recipe_name == ""):
+            raise ValueError("Docker recipe file name has not been set")
+        elif (self.image_name == ""):
+            raise ValueError("Docker image file name has not been set")
+        else:
+            return ("docker build -t " + self.image_name + " -f " + self.recipe_name + " .")
+         
+    def build_image(self):
+        '''Build the Docker image'''
+        build_command = self.get_build_command()
+        if (self.recipe_name == ""):
+            raise ValueError("Docker recipe file name has not been set")
+        else:
+            file = Path(self.recipe_name)
+            if file.is_file():
+                # TODO: store log file, handle error
+                subprocess.run(build_command, shell=True)
+            else:
+                raise FileExistsError("Docker recipe file does not exist:", self.recipe_name)
+
+
+def split_version_number(input_ver):
+    '''
+    Split a given version number in string into 3 integers.
+    '''
+    string_list = re.findall(r'\d+', input_ver)
+    if (len(string_list) == 3):
+        int_list = [int(x) for x in string_list]
+        return int_list
+    else:
+        return []
+
+
+def compose_version_number(int_list):
+    '''
+    Given a list of 3 integers, compose version number.
+    '''
+    if (len(int_list) == 3):
+        return (str(int_list[0]) + '.' + str(int_list[1]) + '.' + str(int_list[2]))
+    else:
+        return ""
 
 
 def get_mpi_type_and_version(mpi_name):
     '''
-    Given the full name of MPI, return the MPI type: mpich or openmpi
-    as well as the version.
+    Given the full name of MPI, return MPI type (mpich / openmpi)
+    as well as version.
+    When the version is not specified, the simplest version to install 
+    is chosen (ie. using "apt-get install").
+    Input should be in one of these formats:
+    - mpich
+    - openmpi
+    - mpich-X.Y.Z
+    - openmpi-X.Y.Z
+    Where "X.Y.Z" is version number.
     '''
-    if (len(mpi_name) > 5):
-        if (mpi_name[0:5] == "mpich"):
-            return ("mpich", mpi_name[6:])
-        elif (mpi_name[0:8] == "openmpi-"):
-            return ("openmpi", mpi_name[8:])
+    length = len(mpi_name)
+    if (type(mpi_name) == str):
+        if (length < 5):
+            raise ValueError("MPI name is too short:", mpi_name)
+
+        elif (length == 5):
+            # Unspecified MPICH
+            if (mpi_name == "mpich"):
+                return("mpich", "")
+            else:
+                raise ValueError("Expecting mpich:", mpi_name)
+
+        elif (length == 6):
+            raise ValueError("Illegal MPI name:", mpi_name)
+
+        elif (length == 7):
+            # Unspecified OpenMPI
+            if (mpi_name == "openmpi"):
+                return("openmpi", "")
+            else:
+                raise ValueError("Expecting openmpi:", mpi_name)
+
         else:
-            raise ValueError("Illegal MPI name", mpi_name)
-    elif (len(mpi_name) == 5):
-        if (mpi_name == "mpich"):
-            return("mpich", "")
+            if (mpi_name[0:5] == "mpich"):
+                # MPICH with specified version number
+                int_ver = split_version_number(mpi_name[6:])
+                if (len(int_ver) == 3):
+                    return ("mpich", compose_version_number(int_ver))
+                else:
+                    raise ValueError("Illegal mpich version:", mpi_name[6:])
+
+            elif (mpi_name[0:7] == "openmpi"):
+                # OpenMPI with specified version number
+                int_ver = split_version_number(mpi_name[8:])
+                if (len(int_ver) == 3):
+                    return ("openmpi", compose_version_number(int_ver))
+                else:
+                    raise ValueError("Illegal openmpi version:", mpi_name[8:])
+            else:
+                raise ValueError("Illegal MPI name:", mpi_name)
+    else:
+        raise TypeError("MPI name is not a string:", mpi_name)
+
+
+
+def make_image(machine_target, mpi_target, actual):
+    '''
+    Make Docker image for a given machine and MPI target.
+    '''
+    apt_install_part = (
+    "RUN apt-get update \\\n"
+    "    && apt-get upgrade -y \\\n"
+    "    && apt-get autoremove -y \\\n"
+    "    && apt-get install -y")
+
+    # Put apps to install from Ubuntu here
+    apt_install_items = [
+    "g++",
+    "gfortran",
+    "git",
+    "wget",
+    "make"]
+
+    for apt_install_item in apt_install_items:
+        apt_install_part += " \\\n" + "        " + apt_install_item
+    apt_install_part += "\n"
+
+    common_top_part = (
+    apt_install_part +
+    "# Common top part\n"
+    "# ...\n"
+    )
+
+    common_bottom_part = (
+    "# Common bottom part\n"
+    "WORKDIR /home\n"
+    "RUN git clone https://github.com/prlahur/testmpi.git\n"
+    "WORKDIR /home/testmpi\n"
+    "RUN make\n"
+    )
+
+    if machine_target == "generic":
+        base_system_part = ("FROM ubuntu:bionic as buildenv\n")
+
+        (mpi_type, mpi_ver) = get_mpi_type_and_version(mpi_target)
+
+        if (mpi_type == "mpich"):
+            if (mpi_ver == ""):
+                # if MPICH version is not specified, get the precompiled version
+                mpi_part = "RUN apt-get install -y libmpich-dev\n"
+
+            else:
+                # else (if version is specified), download the source from website and build           
+                web_dir = "https://www.mpich.org/static/downloads/" + mpi_ver
+
+                mpi_part = (
+                "# Build MPICH\n"
+                "WORKDIR /home\n"
+                "RUN wget " + web_dir + "/" + mpi_target + ".tar.gz \\\n"
+                "    && tar -zxf " + mpi_target + ".tar.gz\n"
+                "    && rm " + mpi_target + ".tar.gz \n"
+                "WORKDIR /home/" + mpi_target + "\n"
+                "RUN ./configure --prefix=" + mpi_dir + " \\\n"
+                "    && make -j" + str(nproc) + " \\\n"
+                "    && make install \n"
+                "ENV PATH=$PATH:" + mpi_dir + "/bin\n"
+                "ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:" + mpi_dir + "/lib\n"
+                )
+
+        elif (mpi_type == "openmpi"):
+            if (mpi_ver == ""):
+                # if OpenMPI version is not specified, get the precompiled version
+                mpi_part = "RUN apt-get install -y libopenmpi-dev\n"
+
+            else:
+                # Download the source from OpenMPI website and build
+                int_ver = split_version_number(mpi_ver)
+                ver_dir = "v" + str(int_ver[0]) + "." + str(int_ver[1])
+                web_dir = "https://download.open-mpi.org/release/open-mpi/" + ver_dir
+
+                # Note: Enable C++ binding when configuring, because some programs use it.
+                # ./configure --enable-mpi-cxx
+
+                mpi_part = (
+                "# Build OpenMPI\n"
+                "WORKDIR /home\n"
+                "RUN wget " + web_dir + "/" + mpi_target + ".tar.gz \\\n"
+                "    && tar -zxf " + mpi_target + ".tar.gz \\\n"
+                "    && rm " + mpi_target + ".tar.gz \n"
+                "WORKDIR /home/" + mpi_target + "\n"
+                "RUN ./configure --enable-mpi-cxx \\\n"
+                "    && make all -j" + str(nproc) + " \\\n"
+                "    && make install\n"
+                "ENV PATH=/usr/local/bin:$PATH\n"
+                "ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH\n"
+                )
+
         else:
-            raise ValueError("Illegal MPI name", mpi_name)
+            raise ValueError("Unknown MPI target:", mpi_target)
+
+        docker_target = DockerClass()
+        docker_target.set_recipe_name("Dockerfile-" + mpi_target)
+        docker_target.set_recipe(header + base_system_part + common_top_part + mpi_part + common_bottom_part)
+        docker_target.set_image_name(image_prepend + mpi_target + image_append)
+
+    elif (machine_target == "galaxy"):
+        # Galaxy (of Pawsey) has Docker image with its MPICH implementation already baked into 
+        # an Ubuntu base.
+        base_system_part = ("FROM pawsey/mpi-base:latest as buildenv\n")
+
+        docker_target = DockerClass()
+        docker_target.set_recipe_name("Dockerfile-" + machine_target)
+        docker_target.set_recipe(header + base_system_part + common_top_part + common_bottom_part)
+        docker_target.set_image_name(image_prepend + machine_target + image_append)
+
     else:
-        raise ValueError("Illegal MPI name", mpi_name)
+        raise ValueError("Unknown machine target:", machine_target)
 
-
-def get_mpi_type(mpi_name):
-    '''Given the full name of MPI, return the type: MPICH or OpenMPI'''
-    if (mpi_name[0:5] == "mpich"):
-        return "mpich"
-    elif (mpi_name[0:8] == "openmpi-"):
-        return "openmpi"
+    docker_target.write_recipe()
+    if actual:
+        docker_target.build_image()
     else:
-        print("ERROR: Illegal MPI name: ", mpi_name)
-        return None
+        print(docker_target.get_build_command())
+
+    return docker_target
 
 
-def get_openmpi_version(mpi_name):
-    if (mpi_name[0:8] == "openmpi-"):
-        return mpi_name[8:]
+
+def make_batch_file(machine, mpi):
+    '''
+    Make sample batch files for SLURN
+    '''
+
+    batch_common_part = (
+    "#!/bin/bash -l\n"
+    "## This file is automatically created by " + __file__ + "\n"
+    "#SBATCH --ntasks=5\n"
+    "##SBATCH --ntasks=305\n"
+    "#SBATCH --time=02:00:00\n"
+    "#SBATCH --job-name=cimager\n"
+    "#SBATCH --export=NONE\n\n"
+    "module load singularity/3.5.0\n")
+
+    (mpi_type, mpi_ver) = get_mpi_type_and_version(mpi)
+    if (mpi_type == "mpich"):
+        module = "mpich/3.3.0"
+        image = "yandasoft-mpich_latest.sif"
+        batch_mpi_part = (
+        "module load " + module + "\n\n"
+        "mpirun -n 5 singularity exec " + image +
+        " cimager -c dirty.in > dirty_${SLURM_JOB_ID}.log\n")
+
+    elif (mpi_type == "openmpi"):
+        if (mpi_ver != None):
+            module = "openmpi/" + mpi_ver + "-ofed45-gcc"
+            image = "yandasoft-" + mpi_ver + "_latest.sif"
+            batch_mpi_part = (
+            "module load " + module + "\n\n"
+            "mpirun -n 5 -oversubscribe singularity exec " + image +
+            " cimager -c dirty.in > dirty_${SLURM_JOB_ID}.log\n")
+
     else:
-        print("ERROR: This is not OpenMPI: ", mpi_name)
-        return None
+        raise ValueError("Unknown MPI target:", mpi)
+
+    batch_file = "sample-" + machine + "-" + mpi + ".sbatch"
+    print("Making batch file:", batch_file)
+    with open(batch_file, "w") as file:
+        file.write(batch_common_part + batch_mpi_part)
+
+
+
+def show_targets():
+    print("The list of Docker targets: ")
+    for machine in machine_targets:
+        print("- Machine:", machine)
+        if machine == "generic":
+            for mpi in mpi_targets:
+                print("  - MPI:", mpi)
+    print("Note that specific machine has a preset MPI target")
+
 
 
 def main():
-    import subprocess
+    parser = argparse.ArgumentParser(
+        description="Make Docker images for various MPI implementations",
+        epilog="The targets can be changed from inside the script (the SETTINGS section)")
+    parser.add_argument('-i', '--image', help='Create image', action='store_true')
+    parser.add_argument('-s', '--show_targets_only', help='Show targets only', action='store_true')
+    #parser.add_argument('-s', '--slurm', help='Create sample batch files for SLURM', action='store_true')
+    args = parser.parse_args()
 
-    print("Making Dockerfiles for all targets ...")
+    if args.show_targets_only:
+        show_targets()
+        sys.exit(0)
 
-    docker_targets = []
-
-    header = ("# This file is automatically created by " + __file__ + "\n")
+    if args.image:
+        print("Making Docker images ...")
+    else:
+        print("Docker image will not be made")
 
     for machine_target in machine_targets:
         if machine_target == "generic":
-            common_top_part = (
-            "FROM ubuntu:latest\n"
-            "RUN apt-get update\n"
-            "RUN apt-get upgrade -y\n"
-            "RUN apt-get autoremove -y\n"
-            "RUN apt-get install -y git\n"
-            "RUN apt-get install -y make\n")
-
-            common_bottom_part = (
-            "WORKDIR /home\n"
-            "RUN git clone https://github.com/prlahur/testmpi.git\n"
-            "WORKDIR /home/testmpi\n"
-            "RUN make\n")
-
             for mpi_target in mpi_targets:
-                (mpi_type, mpi_ver) = get_mpi_type_and_version(mpi_target)
-
-                if (mpi_type == "mpich"):
-                    if (mpi_ver == ""):
-                        # if MPICH version is not specified, get the precompiled generic version
-                        mpi_part = "RUN apt-get install -y mpich\n"
-
-                    else:
-                        # Otherwise, download the source and build it           
-                        mpich_dir = "http://www.mpich.org/static/downloads/" + mpi_ver
-                        mpi_part = (
-                        "RUN apt-get install -y wget\n"
-                        "RUN apt-get install -y g++\n"
-                        "RUN apt-get install -y gfortran\n"
-                        "WORKDIR /home\n"
-                        "RUN wget " + mpich_dir + "/" + mpi_target + ".tar.gz\n"
-                        "RUN gunzip " + mpi_target + ".tar.gz\n"
-                        "RUN tar -xf " + mpi_target + ".tar\n"
-                        "WORKDIR /home/" + mpi_target + "\n"
-                        "RUN ./configure --prefix=\"/home/$USER/mpich-install\n"
-                        "RUN make\n"
-                        "RUN make install\n"
-                        "ENV PATH=$PATH:/home/$USER/mpich-install/bin\n"
-                        "ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/$USER/mpich-install/lib/:/usr/local/lib\n")
-
-                elif (mpi_type == "openmpi"):
-                    # Note that OpenMPI is more complicated than MPICH, because:
-                    # - There are multiple incompatible versions
-                    # - Must be built from the source code
-                    # - Must be downloaded from OpenMPI website first
-                    # - The version dictates the directory it is downloaded from
-
-                    openmpi_common_top_part = (
-                    "RUN apt-get install -y wget\n"
-                    "RUN apt-get install -y g++\n"
-                    "WORKDIR /home\n")
-
-                    openmpi_common_bottom_part = (
-                    "RUN ./configure --prefix=\"/home/$USER/.openmpi\"\n"
-                    "RUN make all install\n"
-                    "ENV PATH=$PATH:/home/$USER/.openmpi/bin\n"
-                    "ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/$USER/.openmpi/lib/:/usr/local/lib\n")
-
-                    openmpi_ver = mpi_target[8:]
-
-                    # TODO: Check whether the version number is correct
-
-                    # Directory name for OpenMPI download
-                    openmpi_dir = "https://download.open-mpi.org/release/open-mpi/v" + openmpi_ver[0:3]
-
-                    # TODO: Check whether this file exist
-
-                    openmpi_version_part = (
-                    "RUN wget " + openmpi_dir + "/" + mpi_target + ".tar.gz\n"
-                    "RUN gunzip " + mpi_target + ".tar.gz\n"
-                    "RUN tar -xf " + mpi_target + ".tar\n"
-                    "WORKDIR /home/" + mpi_target + "\n")
-
-                    mpi_part = openmpi_common_top_part + openmpi_version_part + openmpi_common_bottom_part
-
-                else:
-                    print("ERROR: unknown MPI target: ", mpi_target)
-                    quit()
-
-                docker_target = DockerClass()
-                docker_target.set_file_name("Dockerfile-" + mpi_target)
-                docker_target.set_content(header + common_top_part + mpi_part + common_bottom_part)
-                docker_target.set_image(image_prepend + mpi_target + image_append)
-                docker_targets.append(docker_target)
-            # Next mpi target
-
-        elif (machine_target == "galaxy"):
-            # Galaxy (of Pawsey) has Docker image with its MPICH implementation already baked into 
-            # an Ubuntu base.
-
-            dockerfile_content = (
-            "FROM pawsey/mpi-base:latest\n"
-            "RUN apt-get update\n"
-            "RUN apt-get upgrade -y\n"
-            "RUN apt-get autoremove -y\n"
-            "RUN apt-get install -y git\n"
-            "RUN apt-get install -y make\n"
-            "RUN apt-get install -y wget\n"
-            "RUN apt-get install -y g++\n"
-            "RUN apt-get install -y gfortran\n"
-            "WORKDIR /home\n"
-            "RUN git clone https://github.com/prlahur/testmpi.git\n"
-            "WORKDIR /home/testmpi\n"
-            "RUN make\n")
-
-            docker_target = DockerClass()
-            docker_target.set_file_name("Dockerfile-" + machine_target)
-            docker_target.set_content(header + dockerfile_content)
-            docker_target.set_image(image_prepend + machine_target + image_append)
-            docker_targets.append(docker_target)
-
+                docker = make_image(machine_target, mpi_target, args.image)
+                if docker == None:
+                    raise ValueError("Failed to make base image:", machine_target, mpi_target)
         else:
-            print("ERROR: unknown machine target: ", machine_target)
-            quit()
+            # Specific machine
+            docker = make_image(machine_target, None, args.image)
+            if docker == None:
+                raise ValueError("Failed to make base image:", machine_target)
 
-    print("Docker target count:", len(docker_targets))
-
-    if dry_run:
-        print("This is a dry run. No Docker image will be created")
-    else:
-        print("Making Docker images for all targets ...")
-
-    for docker_target in docker_targets:
-        docker_target.write()
-        docker_command = ("docker build -t " + docker_target.image + " -f " + docker_target.file_name + " .")
-        if dry_run:
-            subprocess.run("echo " + docker_command, shell=True)
-        else:
-            subprocess.run(docker_command, shell=True)
-
-    # Consider: Add automatic upload to DockerHub? This requires Docker login.
-
-    if (sample_batch != ""):
-        print()
-        print("Making sample batch files ...")
-
-        for mpi_target in mpi_targets:
-            batch_common_part = (
-            "#!/bin/bash -l\n"
-            "## This file is automatically created by " + __file__ + "\n"
-            "#SBATCH --ntasks=20\n"
-            "#SBATCH --time=00:10:00\n\n"
-            "module load singularity/3.5.0\n")
-
-            mpi_type, mpi_ver = get_mpi_type_and_version(mpi_target)
-            if (mpi_type == "mpich"):
-                module = "mpich/3.3.0"
-                image = "testmpich_latest.sif"
-                batch_mpi_part = (
-                "module load " + module + "\n\n"
-                "mpirun -n 20 singularity exec " + image + " /home/testmpi/mpi_check\n")
-            elif (mpi_type == "openmpi"):
-                openmpi_ver = get_openmpi_version(mpi_target)
-                if (openmpi_ver != None):
-                    module = "openmpi/" + openmpi_ver + "-ofed45-gcc"
-                    image = "testopenmpi-" + openmpi_ver + "_latest.sif"
-                    batch_mpi_part = (
-                    "module load " + module + "\n\n"
-                    "mpirun -n 20 -oversubscribe singularity exec " + image + " /home/testmpi/mpi_check\n")
-                else:
-                    break
-            else:
-                break
-
-            batch_file = sample_batch + "-" + mpi_target + ".sbatch"
-            print("Making batch file:", batch_file)
-            f = open(batch_file, "w")
-            f.write(batch_common_part + batch_mpi_part)
-            f.close()
 
 
 if (__name__ == "__main__"):
-    main()
+    if sys.version_info[0] == 3:
+        main()
+    else:
+        raise ValueError("Must use Python 3")
