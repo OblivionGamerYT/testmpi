@@ -38,7 +38,7 @@ int main(int argc, char** argv)
         else
         {
             int n = atoi(argv[1]);
-            printf("n: %d \n", n);
+            // printf("n: %d \n", n);
             if ((n >= 1) && (n <= maxThreads))
             {
                 nThreads = n;
@@ -51,7 +51,7 @@ int main(int argc, char** argv)
     }
     printf("nThreads: %d \n", nThreads);
 
-    int nElements = 1000 * maxThreads;
+    int nElements = 100000 * maxThreads;
     double x[nElements];
 
     // int NTHREADS = 1;
@@ -72,7 +72,7 @@ int main(int argc, char** argv)
         for (int i = lowerBound; i < upperBound; ++i)
         {
             // Some expensive process here
-            for (int j = 0; j < 2000000; ++j)
+            for (int j = 0; j < 200000; ++j)
             {
                 // This computation is completely within the thread
                 x[i] = x[i] + 1.0;
