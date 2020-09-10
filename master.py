@@ -19,7 +19,7 @@ machine_targets = ["generic"]
 # where X, Y and Z are version numbers (major, minor and revision).
 # Possible MPI targets:
 # mpi_targets = ["mpich", "mpich-3.3.2", "openmpi", "openmpi-4.0.3", "openmpi-3.1.4", "openmpi-2.1.6", "openmpi-1.10.7"]
-mpi_targets = ["mpich", "openmpi-4.0.3"]
+mpi_targets = ["mpich"]
 
 # Docker image name is in this format: 
 # target_prepend + mpi_target + target_append
@@ -45,6 +45,10 @@ import argparse
 import subprocess
 import re
 from pathlib import Path
+
+user = "user"
+group = "group"
+home_dir = "/home/user"
 
 # Header for all automatically generated Dockerfiles
 header = ("# This file is automatically created by " + __file__ + "\n")
@@ -239,18 +243,55 @@ def make_image(machine_target, mpi_target, actual):
         apt_install_part += " \\\n" + "        " + apt_install_item
     apt_install_part += "\n"
 
+    cmake_ver = "3.18.2"
+    cmake_source = "cmake-" + cmake_ver + ".tar.gz"
+
     common_top_part = (
     apt_install_part +
     "# Common top part\n"
-    "# ...\n"
+    "# Build the latest cmake\n"
+    "RUN mkdir /usr/local/share/cmake\n"
+    "WORKDIR /usr/local/share/cmake\n"
+    "RUN wget https://github.com/Kitware/CMake/releases/download/v" + cmake_ver + "/" + cmake_source + " \\\n"
+    "    && tar -zxf " + cmake_source + " \\\n"
+    "    && rm " + cmake_source + "\n"
+    "WORKDIR /usr/local/share/cmake/cmake-" + cmake_ver + "\n"
+    "RUN ./bootstrap --system-curl \\\n"
+    "    && make \\\n"
+    "    && make install\n"
     )
 
     common_bottom_part = (
     "# Common bottom part\n"
-    "WORKDIR /home\n"
+    "WORKDIR " + home_dir + "\n"
     "RUN git clone https://github.com/prlahur/testmpi.git\n"
-    "WORKDIR /home/testmpi\n"
-    "RUN make\n"
+    "WORKDIR " + home_dir + "/testmpi\n"
+    "WORKDIR " + home_dir + "/testmpi/build\n"
+    "RUN cmake ..\n"
+    "# Set environment variables\n"
+    "ENV PATH=" + home_dir + "/testmpi/bin:$PATH \n"
+    "# Switch into user and group ID on the host side\n"
+    "ARG USER_ID\n"
+    "ARG GROUP_ID\n"
+    "RUN if [ ${USER_ID:-0} -ne 0 ] && [ ${GROUP_ID:-0} -ne 0 ] ; then \\\n"
+    "    if id " + user + " ; then userdel -f " + user + " ; fi &&\\\n"
+    "    if getent group " + group + " ; then groupdel " + group + " ; fi &&\\\n"
+    "    groupadd --gid ${GROUP_ID} " + group + " &&\\\n"
+    "    useradd --no-log-init --uid ${USER_ID} --gid " + group + " " + user + " \\\n"
+    ";fi\n"
+    "WORKDIR " + home_dir + "\n"
+    "RUN chown --changes --silent --no-dereference --recursive ${USER_ID}:${GROUP_ID} " + home_dir + "\n"
+    "USER " + user + "\n"
+    "# Set up aliases in .bashrc\n"
+    "RUN echo \"alias rm=\'rm -i\'\" >> ~/.bashrc &&\\\n"                                                          
+    "    echo \"alias cp=\'cp -i\'\" >> ~/.bashrc &&\\\n"
+    "    echo \"alias mv=\'mv -i\'\" >> ~/.bashrc \n"
+    "# Put start-up message in .bashrc\n"
+    "RUN echo \"echo \" >> ~/.bashrc &&\\\n"
+    "    echo \"echo ================================================================================\" >> ~/.bashrc &&\\\n"
+    "    echo \"echo Welcome to testmpi container! \" >> ~/.bashrc &&\\\n"
+    "    echo \"echo ================================================================================\" >> ~/.bashrc \n"
+    "WORKDIR " + home_dir + "/testmpi \n"
     )
 
     if machine_target == "generic":
