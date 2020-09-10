@@ -227,7 +227,7 @@ def make_image(machine_target, mpi_target, actual):
     '''
     apt_install_part = (
     "RUN apt-get update \\\n"
-    "    && apt-get upgrade -y \\\n"
+    # "    && apt-get upgrade -y \\\n"
     "    && apt-get autoremove -y \\\n"
     "    && apt-get install -y")
 
@@ -237,7 +237,11 @@ def make_image(machine_target, mpi_target, actual):
     "gfortran",
     "git",
     "wget",
-    "make"]
+    "make",
+    "libxerces-c-dev",
+    "libcurl4-openssl-dev",
+    "cmake"
+    ]
 
     for apt_install_item in apt_install_items:
         apt_install_part += " \\\n" + "        " + apt_install_item
@@ -249,16 +253,16 @@ def make_image(machine_target, mpi_target, actual):
     common_top_part = (
     apt_install_part +
     "# Common top part\n"
-    "# Build the latest cmake\n"
-    "RUN mkdir /usr/local/share/cmake\n"
-    "WORKDIR /usr/local/share/cmake\n"
-    "RUN wget https://github.com/Kitware/CMake/releases/download/v" + cmake_ver + "/" + cmake_source + " \\\n"
-    "    && tar -zxf " + cmake_source + " \\\n"
-    "    && rm " + cmake_source + "\n"
-    "WORKDIR /usr/local/share/cmake/cmake-" + cmake_ver + "\n"
-    "RUN ./bootstrap --system-curl \\\n"
-    "    && make \\\n"
-    "    && make install\n"
+    # "# Build the latest cmake\n"
+    # "RUN mkdir /usr/local/share/cmake\n"
+    # "WORKDIR /usr/local/share/cmake\n"
+    # "RUN wget https://github.com/Kitware/CMake/releases/download/v" + cmake_ver + "/" + cmake_source + " \\\n"
+    # "    && tar -zxf " + cmake_source + " \\\n"
+    # "    && rm " + cmake_source + "\n"
+    # "WORKDIR /usr/local/share/cmake/cmake-" + cmake_ver + "\n"
+    # "RUN ./bootstrap --system-curl \\\n"
+    # "    && make \\\n"
+    # "    && make install\n"
     )
 
     common_bottom_part = (
@@ -283,11 +287,11 @@ def make_image(machine_target, mpi_target, actual):
     "RUN chown --changes --silent --no-dereference --recursive ${USER_ID}:${GROUP_ID} " + home_dir + "\n"
     "USER " + user + "\n"
     "# Set up aliases in .bashrc\n"
-    "RUN echo \"alias rm=\'rm -i\'\" >> ~/.bashrc &&\\\n"                                                          
-    "    echo \"alias cp=\'cp -i\'\" >> ~/.bashrc &&\\\n"
-    "    echo \"alias mv=\'mv -i\'\" >> ~/.bashrc \n"
+    "RUN echo \"alias rm=\'rm -i\'\" >> " + home_dir + "/.bashrc &&\\\n"                                                          
+    "    echo \"alias cp=\'cp -i\'\" >> " + home_dir + "/.bashrc &&\\\n"
+    "    echo \"alias mv=\'mv -i\'\" >> " + home_dir + "/.bashrc \n"
     "# Put start-up message in .bashrc\n"
-    "RUN echo \"echo \" >> ~/.bashrc &&\\\n"
+    "RUN echo \"echo \" >> " + home_dir + "/.bashrc &&\\\n"
     "    echo \"echo ================================================================================\" >> ~/.bashrc &&\\\n"
     "    echo \"echo Welcome to testmpi container! \" >> ~/.bashrc &&\\\n"
     "    echo \"echo ================================================================================\" >> ~/.bashrc \n"
