@@ -48,7 +48,7 @@ from pathlib import Path
 
 user = "user"
 group = "group"
-home_dir = "/home/user"
+home_dir = "/home/" + user
 
 # Header for all automatically generated Dockerfiles
 header = ("# This file is automatically created by " + __file__ + "\n")
@@ -125,7 +125,10 @@ class DockerClass:
         elif (self.image_name == ""):
             raise ValueError("Docker image file name has not been set")
         else:
-            return ("docker build -t " + self.image_name + " -f " + self.recipe_name + " .")
+            # return ("docker build -t " + self.image_name + " -f " + self.recipe_name + " .")
+            return ("docker image build --build-arg USER_ID=$(id -u ${USER}) " +
+                "--build-arg GROUP_ID=$(id -g ${USER}) -t " + self.image_name + 
+                " -f " + self.recipe_name + " .")
          
     def build_image(self):
         '''Build the Docker image'''
@@ -240,7 +243,8 @@ def make_image(machine_target, mpi_target, actual):
     "make",
     "libxerces-c-dev",
     "libcurl4-openssl-dev",
-    "cmake"
+    "cmake",
+    "docker"
     ]
 
     for apt_install_item in apt_install_items:
@@ -269,9 +273,10 @@ def make_image(machine_target, mpi_target, actual):
     "# Common bottom part\n"
     "WORKDIR " + home_dir + "\n"
     "RUN git clone https://github.com/prlahur/testmpi.git\n"
-    "WORKDIR " + home_dir + "/testmpi\n"
+    # "WORKDIR " + home_dir + "/testmpi\n"
     "WORKDIR " + home_dir + "/testmpi/build\n"
-    "RUN cmake ..\n"
+    "RUN cmake -DCMAKE_BUILD_TYPE=Release ..\\\n"
+    "    && make\n"
     "# Set environment variables\n"
     "ENV PATH=" + home_dir + "/testmpi/bin:$PATH \n"
     "# Switch into user and group ID on the host side\n"
@@ -295,6 +300,7 @@ def make_image(machine_target, mpi_target, actual):
     "    echo \"echo ================================================================================\" >> ~/.bashrc &&\\\n"
     "    echo \"echo Welcome to testmpi container! \" >> ~/.bashrc &&\\\n"
     "    echo \"echo ================================================================================\" >> ~/.bashrc \n"
+    # "WORKDIR " + home_dir + " \n"
     "WORKDIR " + home_dir + "/testmpi \n"
     )
 

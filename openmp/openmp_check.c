@@ -9,39 +9,60 @@ Check OpenMP
 
 int main(int argc, char** argv) 
 {
-    #ifdef _OPENMP
-    printf("OpenMP is defined \n");
-    // int nThreads;
-    #endif
+    // #ifdef _OPENMP
+    // printf("OpenMP is defined \n");
+    // #endif
 
-    // nThreads = omp_get_num_threads();
-    // printf("Number of threads in serial mode: %d\n", nThreads);
+    int maxThreads;
+
     #pragma omp parallel
     {
-        // int nThreads = omp_get_num_threads();
-        if (omp_get_thread_num() == 0) 
+        maxThreads = omp_get_num_threads();
+    }
+    // printf("maxThreads: %d \n", maxThreads);
+
+    // Get the number of threads from input
+    int nThreads = maxThreads;  // Default
+    if (argc == 2)
+    {
+        if (argv[1][0] == '-')
         {
-            // printf("Number of threads in parallel mode: %d\n", nThreads);
-            printf("omp_get_max_threads: %d\n", omp_get_max_threads());
-            printf("omp_get_num_threads: %d\n", omp_get_num_threads());
-            printf("omp_get_num_procs: %d\n", omp_get_num_procs());
+            printf("Usage: openmp_check [nThread|option] \n");
+            printf("  nThread     Number of threads (positive integer).\n");
+            printf("              Default: max number of threads.\n");
+            printf("Options: \n");
+            printf("  -h          This help.\n");
+
+            return 0;
+        }
+        else
+        {
+            int n = atoi(argv[1]);
+            printf("n: %d \n", n);
+            if ((n >= 1) && (n <= maxThreads))
+            {
+                nThreads = n;
+            }
+            else
+            {
+                printf("Illegal number of threads. Default is used instead.\n");
+            }
         }
     }
+    printf("nThreads: %d \n", nThreads);
 
-    int nElements = 8000;
+    int nElements = 1000 * maxThreads;
     double x[nElements];
+
+    // int NTHREADS = 1;
+    omp_set_num_threads(nThreads);
 
     clock_t clockStart = clock();
     time_t timeStart = time(NULL);
 
-    int NTHREADS = 1;
-    omp_set_num_threads(NTHREADS);
-
-
     #pragma omp parallel
     {
         int tid = omp_get_thread_num();
-        int nThreads = omp_get_num_threads();
         printf("Thread %d of %d starts \n", tid, nThreads);
 
         int nElementsPerThread = nElements / nThreads;
